@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+	
+	<link rel="stylesheet" media="screen, print" href="../css/vendors.bundle.css">
+	<link rel="stylesheet" media="screen, print" href="../css/app.bundle.css">
+	<link rel="stylesheet" media="screen, print" href="../css/base.css">
+	<link rel="stylesheet" media="screen, print" href="../css/cropperjs/cropper.css">
+
+	<script src="../js/jquery-3.5.1.js"></script>
+	<script src="../js/vendors.bundle.js"></script>
+	<script src="../js/app.bundle.js"></script>
+	<script src="../js/bootstrap/bootstrap.min.js"></script>
+	<script src="../js/cropperjs/cropper.js"></script>
+</head>
+
+<body>
+<div id="modal_labeling">
+	<div class="panel-container" id="panel_container_labeling" style="height:100%;">
+        <div class="row" id="actions">
+            <div class="col-md-12 docs-buttons">
+                <div class="panel mb-3">
+                    <div class="panel-container">
+                        <div class="panel-content p-2 d-flex align-items-center">
+                            <!-- <h3>Toolbar:</h3> -->
+                            <div class="flex-1">
+                                <div class="btn-group mr-3" style="display:none;">
+                                    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                                        <label class="btn btn-outline-info active">
+                                            <input type="radio" name="radioEdit" id="btnSelect" value="0" checked="checked"> 선택
+                                        </label>
+                                        <label class="btn btn-info active">
+                                            <input type="radio" name="radioEdit" id="btnEdit" value="1"> 편집
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-primary" data-method="setDragMode" data-option="move" title="Move(Q)">
+                                        <span class="docs-tooltip" data-toggle="tooltip" title="Move(Q)">
+                                          이동
+                                        </span>
+                                    </button>
+                                    <button type="button" class="btn btn-primary" data-method="setDragMode" data-option="crop" title="Crop(Q)">
+                                        <span class="docs-tooltip" data-toggle="tooltip" title="Edit(Q)">
+                                          편집
+                                        </span>
+                                    </button>
+                                </div>
+
+                                <div class="btn-group mr-3">
+                                    <button type="button" class="btn btn-primary" data-method="zoom" data-option="0.1" title="Zoom In">
+                                        <span class="docs-tooltip" data-toggle="tooltip" title="Zoom In">
+                                          확대
+                                        </span>
+                                    </button>
+                                    <button type="button" class="btn btn-primary" data-method="zoom" data-option="-0.1" title="Zoom Out">
+                                        <span class="docs-tooltip" data-toggle="tooltip" title="Zoom Out">
+                                          축소
+                                        </span>
+                                    </button>
+                                </div>
+
+                                <div class="btn-group" style="display:none;">
+                                    <button type="button" class="btn btn-primary">
+                                        <span class="docs-tooltip" data-toggle="tooltip" title="undo(Ctrl+Z)">
+                                            <span class="fal fa-arrow-left"></span>
+                                        </span>
+                                    </button>
+                                    <button type="button" class="btn btn-primary">
+                                        <span class="docs-tooltip" data-toggle="tooltip" title="redo(Ctrl+Shift+Z)">
+                                            <span class="fal fa-arrow-right"></span>
+                                        </span>
+                                    </button>
+                                </div>
+
+                                <button type="button" class="btn btn-outline-primary" id="btnLabelingReset" style="display:none;">
+                                    <span class="docs-tooltip" data-toggle="tooltip" title="reset">
+                                        <i class="fal fa-undo"></i> 초기화
+                                    </span>
+                                </button>
+
+                                <button type="button" class="btn btn-primary mr-3" id="btnImageSizeReset" title="Reset">
+                                    <span class="docs-tooltip" data-toggle="tooltip" data-animation="false" title="Photo Size Reset(R)">
+                                      이미지 사이즈 초기화
+                                    </span>
+                                </button>
+
+                                <button type="button" class="btn btn-outline-primary" id="btnChangeLabeling">
+                                    <span class="docs-tooltip" data-toggle="tooltip" title="Box Save(S)">
+                                        라벨링 수정
+                                    </span>
+                                </button>
+
+                                <button type="button" class="btn btn-outline-primary" id="btnLabelingModalTitle" style="display:none;">
+                                    <span class="docs-tooltip" data-toggle="tooltip" title="단축키">
+                                        단축키
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- /.docs-buttons -->
+        </div>
+        <div class="row">
+            <div class="col-md-9">
+                <!-- <h3>Demo:</h3> -->
+                <div class="docs-demo border-primary" id="wrap_cropper" style="position:relative;">
+                    <div class="img-container mb-0" style="max-height:none; background-color:transparent;">
+                        <img id="labelingImage" src="../img/asphalt_blur_cars_clouds_drive_expressway_fast_guidance-1522725.jpg" alt="Picture">
+                    </div>
+
+                    <ul class="contextmenu">
+                        <li id="btnMenuSave"><div>수정</div></li>
+                        <li id="btnMenuDelete"><div>삭제</div></li>
+                        <li id="btnMenuCancel"><div>선택 해제</div></li>
+                    </ul>
+
+                    <div class="toast fade" role="alert" aria-live="assertive" aria-atomic="true" data-toggle="toast"id="labelingToast" style="position:absolute; bottom:10px; margin-left:calc(50% - 100px); width:200px;">
+                        <div class="toast-body" style="text-align:center;" id="labelingToastMsg">
+                            mode...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="panel" id="wrap_preview">
+                    <div class="panel-hdr">
+                        <h2>
+                            <span>Preview</span>
+                        </h2>
+                    </div>
+                    <div class="panel-container">
+                        <div class="panel-content" style="height:100px;">
+                            <div class="docs-preview">
+                                <div class="img-preview preview-md"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel" id="wrap_labeling_list">
+                    <div class="panel-hdr" id="header_labeling_list">
+                        <h2>
+                            <span>Labeling List</span>
+                        </h2>
+                        <div class="panel-toolbar">
+                            <select class="form-control mr-3" id="selClass" style="width:8.0rem;">
+								<option value="0" data-color="#f44336">car</option>
+								<option value="1" data-color="#03a9f4">ban/SUV</option>
+								<option value="2" data-color="#0f4c81">bus</option>
+								<option value="3" data-color="#e91e63">truck</option>
+								<option value="4" data-color="#0000ff">human</option>
+								<option value="1000" data-color="#00ff1f">X</option>
+                            </select>
+                            <button type="button" class="btn text-info p-0" id="btnAddListLabeling">
+                                <span class="docs-tooltip" data-toggle="tooltip" title="New(W)">
+                                    추가
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="panel-container" id="container_labeling_list" style="overflow-y:auto;">
+                        <div class="panel-content">
+                            <div class="" id="listLabelingImage"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-12 p-0" id="wrap_labeling_save">
+                    <div class="row w-100 m-0" id="wrap_labeling_worker">
+                        <button type="button" class="btn btn-lg btn-danger waves-effect waves-themed w-100" id="btnLabelingAllSave">
+                            완료
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+<script th:inline="javascript">
+    var orgCropValue = [];
+    var arrCropValue = new Object();
+    var URL = window.URL || window.webkitURL;
+    var $image = $('#labelingImage');
+    var options = {
+        preview: '.img-preview',
+        toggleDragModeOnDblclick: false,
+        crop: function (e) {
+        }
+    };
+    var originalImageURL = $image.attr('src');
+    var uploadedImageURL;
+
+    var image_id = /*[[${image_id}]]*/ "5febda961367a0205c6da426";
+    var worker_result = [];
+
+    $(document).ready(function() {
+        $("#wrap_loading").show();
+
+        /*[- modal hide -]*/
+        //$("#modal_labeling").on("hide.bs.modal", function() {
+            /*[- modal hide 시 modal 데이터 삭제(초기화) -]*/
+        //    $("#modal_labeling").find(".modal-content").empty();
+        //});
+
+        $("#btnLabelingModalTitle").off("click").on("click", function() {
+			alert(`
+			모드 변경 : Q
+			이미지 화면 맞춤 : R
+			------------------------------
+			복사 : D
+			추가 : W
+			수정 : S
+			삭제 : F`);
+        });
+
+        /*[- 선택 초기화 -]*/
+        $("#btnLabelingReset").off("click").on("click", function() {
+            let boxIdx = Number($("#listLabelingImage").find("div.el-labeling.select-labeling").data("box-idx"));
+
+            /*[- 라벨링 데이터 배열 초기화(선택) -]*/
+            initLabelingData(boxIdx);
+        });
+
+        /*[- 라벨링 리스트 추가 -]*/
+        $("#btnAddListLabeling").off("click").on("click", function() {
+            let labelClass = $("#selClass").val();
+            let labelClassNm = $("#selClass option:selected").text();
+            let labelClassColor = $("#selClass option:selected").data("color");
+            let labelCnt = orgCropValue.length;
+            let boxKey = "box"+labelCnt;
+
+            /*[- 라벨링 리스트의 preview 이미지 만들기 위해 cropper 영역 crop모드 변경 및 reset -]*/
+            $image.cropper("crop");
+            $image.cropper("reset");
+            let imageData = $image.cropper("getImageData");
+            let defaultSize = imageData.height / 3;
+            $image.cropper("setData", {x:20, y:20, width:defaultSize, height:defaultSize, rotate:0, scaleX:1, scaleY:1});
+
+            setCanvas();
+
+            /*[- cropper reset 영역 데이터 추가 -]*/
+            let defaultCropValue = $image.cropper("getData");
+            orgCropValue.push({x:defaultCropValue.x, y:defaultCropValue.y, width:defaultCropValue.width, height:defaultCropValue.height, class_id:labelClass});
+
+            let jsonArr = new Array();
+            let jsonData = defaultCropValue;
+            jsonArr.push(jsonData);
+            arrCropValue[boxKey] = jsonArr;
+
+            /*[- 선택된 라벨링 선택 해제 -]*/
+            $("#listLabelingImage").find("div.el-labeling").removeClass("border-warning select-labeling").addClass("alert-secondary");
+
+            /*[- crop 영역 canvas 태그 정보 가져오기 -]*/
+            let result = $image.cropper("getCroppedCanvas");
+
+            /*[- 라벨링 리스트 기본 폼 -]*/
+            let tmpHtml = "<div class='col-md-12 row-list' style='padding-left:0.25rem; padding-right:0.25rem; margin:0.3rem 0;' id='list_label_row_"+labelCnt+"' data-idx='"+labelCnt+"'>";
+            tmpHtml += "    <div class='alert border-warning select-labeling d-flex align-items-center p-0 mb-2 el-labeling' data-box-idx='"+labelCnt+"'>";
+            tmpHtml += "        <div class='p-2'><div id='labelingNo_"+labelCnt+"' style='width:1.5rem; height:1.5rem; line-height:1.5rem; background-color:"+labelClassColor+"; color:#fff; border-radius:0.75rem; text-align:center;'>"+(labelCnt+1)+"</div></div>";
+            tmpHtml += "        <div class='bg-faded canvas-labeling d-inline-block cursor-pointer' style='height:70px; width:70px;' id='label_canvas_"+labelCnt+"' onclick='clickLabelingList(\""+labelCnt+"\");'>";
+            tmpHtml += "        </div>";
+            tmpHtml += "        <div class='flex-1'>";
+            // tmpHtml += "            <div class='pl-3 class-labeling' data-class-id='"+labelClass+"'>"+labelClassNm+"</div>";
+            tmpHtml += "            <div class='p-2 class-labeling' data-class-id='"+labelClass+"'>";
+            tmpHtml += "                <select class='form-control' id='selClass_"+labelCnt+"' onchange='changeLabelingListClass(\""+labelCnt+"\");'>";
+            tmpHtml += $("#selClass").html();
+            tmpHtml += "                </select>";
+            tmpHtml += "            </div>";
+            tmpHtml += "        </div>";
+            tmpHtml += "        <div>";
+            tmpHtml += "            <button type='button' class='btn text-danger btn-label-del' title='reset' id='btn_label_del_"+labelCnt+"' style='padding:0.5rem 1.0rem 0.5rem 0.5rem;' onclick='clickDelLabeling("+labelCnt+")'>";
+            tmpHtml += "                삭제";
+            tmpHtml += "            </button>";
+            tmpHtml += "        </div>";
+            tmpHtml += "    </div>";
+            tmpHtml += "</div>";
+
+            $("#listLabelingImage").append(tmpHtml);
+
+            /*[- class 선택 -]*/
+            $("#selClass_"+labelCnt).val(labelClass);
+
+            /*[- 추가된 라벨링 리스트로 스크롤 이동 -]*/
+            $("#container_labeling_list").scrollTop($("#listLabelingImage").height());
+
+            /*[- 리스트 preview canvas 영역에 crop 영역 canvas 추가 -]*/
+            $("#listLabelingImage").find("#label_canvas_"+labelCnt).append(result);
+
+            /*[- 추가 라벨링 canvas 가운데 정렬 css 추가 -]*/
+            $("#label_canvas_"+labelCnt).find("canvas").css({width:"100%", height:"100%", display:"block", "object-fit":"contain"});
+
+            /*[- 라벨링 편집 모드 변경 -]*/
+            if($("input[name='radioEdit']:checked").val() === "0") {
+                $("#btnEdit").click();
+            }
+        });
+
+        /*[- 수정 -]*/
+        $("#btnChangeLabeling").off("click").on("click", function() {
+            if(orgCropValue.length === 0 || !$("#wrap_cropper").find(".cropper-crop-box").is(":visible")) {
+                /*[- 라벨링 데이터 없을 경우 -]*/
+                return;
+            } else {
+                /*[- 수정(저장)할 라벨링이 있을 경우 -]*/
+                let boxEl = $("#listLabelingImage").find("div.el-labeling.select-labeling");
+                let boxIdx = Number($("#listLabelingImage").find("div.el-labeling.select-labeling").data("box-idx"));
+
+                /*[- 선택된 라벨링 수정 정보 저장(추가) -]*/
+                arrCropValue["box"+boxIdx].push($image.cropper("getData"));
+
+                /*[- 수정된 라벨링 좌표 정보 preview 변경 -]*/
+                let result = $image.cropper("getCroppedCanvas");
+                $(boxEl).find("canvas").remove();
+                $(boxEl).find("div.canvas-labeling").append(result);
+                $(boxEl).find("canvas").css({width:"100%", height:"100%", display:"block", "object-fit":"contain"});
+
+                /*[- 모든 라벨링 영역 이미지 위에 그리기 -]*/
+                setCanvas();
+
+                /*[- 선택 모드 전환 -]*/
+                // $("#btnSelect").click();
+            }
+        });
+
+        /*[- 라벨링 선택 모드 -]*/
+        $("#btnSelect").off("click").on("click", function() {
+            $(".cropper-crop-box").hide();
+            $("#labelings_canvas").css("pointer-events", "auto");
+            $(this).closest("label").removeClass("btn-outline-info").addClass("btn-info");
+            $("#btnEdit").closest("label").removeClass("btn-info").addClass("btn-outline-info");
+        });
+        /*[- 라벨링 편집 모드 -]*/
+        $("#btnEdit").off("click").on("click", function() {
+            $(".cropper-crop-box").show();
+            $("#labelings_canvas").css("pointer-events", "none");
+            $(this).closest("label").removeClass("btn-outline-info").addClass("btn-info");
+            $("#btnSelect").closest("label").removeClass("btn-info").addClass("btn-outline-info");
+        });
+
+        /*[- 이미지 사이즈 초기화 -]*/
+        $("#btnImageSizeReset").off("click").on("click", function() {
+            $image.cropper("reset");
+            let boxIdx = Number($("#listLabelingImage").find("div.el-labeling.select-labeling").data("box-idx"));
+            clickLabelingList(boxIdx);
+        });
+
+        /*[- context menu 수정 -]*/
+        $("#btnMenuSave").off("click").on("click", function() {
+            $("#btnChangeLabeling").click();
+
+            /*[- 선택 모드 전환 -]*/
+            // $("#btnSelect").click();
+        });
+        /*[- context menu 삭제 -]*/
+        $("#btnMenuDelete").off("click").on("click", function(e) {
+            let boxIdx = Number($("#listLabelingImage").find("div.el-labeling.select-labeling").data("box-idx"));
+
+            /*[- 라벨링 리스트 삭제 -]*/
+            clickDelLabeling(boxIdx);
+
+            /*[- 선택 모드 전환 -]*/
+            $("#btnSelect").click();
+        });
+        /*[- context menu 취소(선택 해제) -]*/
+        $("#btnMenuCancel").off("click").on("click", function() {
+            /*[- 선택 모드 전환 -]*/
+            $("#btnSelect").click();
+        });
+
+        /*[- 완료(전체 라벨링 데이터)(작업자) -]*/
+        $("#btnLabelingAllSave").off("click").on("click", function() {
+            let arrAllData = {};
+            let jsonArr = new Array();
+            let jsonData = new Object();
+            $.each(arrCropValue, function(key, item) {
+                let finalData = item[item.length - 1];
+
+                let boxNo = key.split("box").join("");
+                let classId = $("#list_label_row_"+boxNo).find("div.class-labeling").data("class-id");
+                let className = $("#selClass_"+boxNo+" option:selected").text();
+                let classColor = $("#selClass_"+boxNo+" option:selected").data("color");
+
+                jsonData = new Object();
+                jsonData = {px:finalData.x, py:finalData.y, pw:finalData.width, ph:finalData.height, class_id:classId, class_name:className, color:classColor};
+                jsonArr.push(jsonData);
+            });
+            arrAllData["image_id"] = image_id;
+            arrAllData["project"] = $("#labelingProject").text();
+            arrAllData["category"] = $("#labelingCategory").text();
+            arrAllData["result"] = jsonArr;
+			
+			alert(JSON.stringify(arrAllData));
+			console.error(JSON.stringify(arrAllData));
+        });
+
+        /*[- 이미지 데이터 가져오기 -]*/
+        getImageData();
+    });
+
+    /*[- 이미지 데이터 가져오기 -]*/
+    function getImageData() {
+		let result = {
+			file_name: "../img/asphalt_blur_cars_clouds_drive_expressway_fast_guidance-1522725.jpg",
+			image_height: 720,
+			image_width: 1280,
+			ml_result: [{"px":679,"py":439,"pw":51,"ph":44,"class_id":0,"class_name":"car","color":"#f44336"},{"px":553,"py":335,"pw":126.66666666666669,"ph":91.66666666666669,"class_id":0,"class_name":"car","color":"#f44336"}],
+			obj_count: 1
+		};
+		
+		worker_result = result.worker_result;
+		
+		let labelingList = result.ml_result;
+		
+		$('#labelingImage').attr("src", result.file_name);
+		$('#labelingImage').off("load").on('load', function() {
+			$.each(labelingList, function(i, v) {
+				let posMap = v;
+				let posData = {x:posMap.px, y:posMap.py, width:posMap.pw, height:posMap.ph, class_id:posMap.class_id};
+				orgCropValue.push(posData);
+			});
+
+			/*[- context menu init -]*/
+			initContextMenu();
+
+			/*[- 라벨링 데이터 배열 초기화(전체) -]*/
+			initLabelingData(-1);
+
+			$("#wrap_loading").hide();
+		}).off('error').on('error', function() {
+			/*[- 이미지 로드하지 못 했을 경우 처리 -]*/
+			$("#wrap_loading").hide();
+		});
+    }
+
+    /*[- context menu init -]*/
+    function initContextMenu() {
+        /*[- Show contextmenu -]*/
+        $("#wrap_cropper").contextmenu(function(e){
+            /*[- Get window size -]*/
+            let winWidth = $("#wrap_cropper").width();
+            let winHeight = $("#wrap_cropper").height();
+            /*[- Get pointer position -]*/
+            let posX = e.pageX - $("#wrap_cropper").offset().left;
+            let posY = e.pageY - $("#wrap_cropper").offset().top;
+            /*[- Get contextmenu size -]*/
+            let menuWidth = $(".contextmenu").width();
+            let menuHeight = $(".contextmenu").height();
+            /*[- Security margin -]*/
+            let secMargin = 10;
+            /*[- 계산된 position -]*/
+            let posLeft = "";
+            let posTop = "";
+            /*[- Prevent page overflow -]*/
+            if(posX + menuWidth + secMargin >= winWidth && posY + menuHeight + secMargin >= winHeight) {
+                /*[- Case 1: right-bottom overflow -]*/
+                posLeft = posX - menuWidth - secMargin + "px";
+                posTop = posY - menuHeight - secMargin + "px";
+            } else if(posX + menuWidth + secMargin >= winWidth) {
+                /*[- Case 2: right overflow -]*/
+                posLeft = posX - menuWidth - secMargin + "px";
+                posTop = posY + secMargin + "px";
+            } else if(posY + menuHeight + secMargin >= winHeight) {
+                /*[- Case 3: bottom overflow -]*/
+                posLeft = posX + secMargin + "px";
+                posTop = posY - menuHeight - secMargin + "px";
+            } else {
+                /*[- Case 4: default values -]*/
+                posLeft = posX + secMargin + "px";
+                posTop = posY + secMargin + "px";
+            }
+
+            /*[- 편집모드일 때 contextmenu show -]*/
+            if($("input[name='radioEdit']:checked").val() === "1") {
+                /*[- Display contextmenu -]*/
+                $(".contextmenu").css({
+                    "left": posLeft,
+                    "top": posTop
+                }).show();
+            }
+            /*[- Prevent browser default contextmenu. -]*/
+            return false;
+        });
+
+        /*[- Hide contextmenu -]*/
+        $("#wrap_cropper").click(function(){
+            $(".contextmenu").hide();
+        });
+    }
+
+    /*[- 라벨링 데이터 배열 초기화 -]*/
+    function initLabelingData(idx) {
+        if(idx === -1) {
+            /*[- 전체 초기화 -]*/
+            if(orgCropValue.length > 0) {
+                for(let i=0; i<orgCropValue.length; i++) {
+                    let boxKey = "box"+i;
+
+                    let jsonArr = new Array();
+                    let jsonData = new Object();
+                    jsonData = {x:orgCropValue[i].x, y:orgCropValue[i].y, width:orgCropValue[i].width, height:orgCropValue[i].height, rotate:0, scaleX:1, scaleY:1};
+                    jsonArr.push(jsonData);
+
+                    arrCropValue[boxKey] = jsonArr;
+                }
+            }
+
+            /*[- cropper init -]*/
+            setTimeout(function() {
+                /*[- cropper view height -]*/
+                let cropWrapHeight = $("#modal_labeling").find(".panel-container").height() - $("#modal_labeling").find("#actions").outerHeight();
+                $("#modal_labeling").find(".img-container").height(cropWrapHeight);
+
+                /*[- labeling list height -]*/
+                let listWrapHeight = cropWrapHeight - $("#modal_labeling").find("#wrap_preview").outerHeight() - $("#wrap_labeling_save").outerHeight();
+                $("#wrap_labeling_list").css("height", "calc("+listWrapHeight+"px - 3.0rem)");
+
+                /*[- cropper init -]*/
+                initModalCropper();
+            }, 200);
+        } else {
+            /*[- 선택 초기화 -]*/
+            let boxKey = "box"+idx;
+
+            let jsonArr = new Array();
+            let jsonData = new Object();
+            jsonData = {x:orgCropValue[idx].x, y:orgCropValue[idx].y, width:orgCropValue[idx].width, height:orgCropValue[idx].height, rotate:0, scaleX:1, scaleY:1};
+            jsonArr.push(jsonData);
+
+            arrCropValue[boxKey] = jsonArr;
+
+            /*[- 선택 라벨링으로 view crop 표시 -]*/
+            $image.cropper("setData", jsonArr[0]);
+
+            /*[- 라벨링 리스트 canvas 변경 -]*/
+            let result = $image.cropper("getCroppedCanvas");
+            $("#list_label_row_"+idx).find("canvas").remove();
+            $("#list_label_row_"+idx).find("div.canvas-labeling").append(result);
+            $("#list_label_row_"+idx).find("canvas").css({width:"100%", height:"100%", display:"block", "object-fit":"contain"});
+
+            /*[- 리스트 선택 -]*/
+            $("#listLabelingImage").find("div.el-labeling").removeClass("border-warning select-labeling").addClass("alert-secondary");
+            $("#list_label_row_"+idx).find("div.el-labeling").removeClass("alert-secondary").addClass("border-warning select-labeling");
+
+            /*[- 모든 라벨링 영역 이미지 위에 그리기 -]*/
+            setCanvas();
+        }
+    }
+
+    /*[- cropper init -]*/
+    function initModalCropper() {
+        /*[- Tooltip -]*/
+        $('[data-toggle="tooltip"]').tooltip();
+
+        /*[- Cropper -]*/
+        $image.off().on({
+            ready: function (e) {
+                /*[- Labeling list 초기화 -]*/
+                $("#listLabelingImage").empty();
+
+                /*[- console.log("-- cropper ready :: ", e.type); -]*/
+                if(orgCropValue.length > 0) {
+                    /*[- 라벨링 리스트 -]*/
+                    setLabelingList();
+
+                    /*[- 모든 라벨링 영역 이미지 위에 그리기 -]*/
+                    setCanvas();
+
+                    $("div.cropper-drag-box").off("click").on("click", function(me) {
+                        /*[- 라벨링 canvas 클릭 이벤트 -]*/
+                        clickDragBox(me);
+                    });
+                } else {
+                    /*[- default crop 영역 clear -]*/
+                    $image.cropper("clear");
+                }
+                $("#wrap_loading").hide();
+            },
+            cropstart: function (e) {
+                /*[- console.log("-- cropper cropstart :: ", e.type, e.detail.action); -]*/
+            },
+            cropmove: function (e) {
+                /*[- console.log("-- cropper cropmove :: ", e.type, e.detail.action); -]*/
+                setTimeout(function() {
+                    /*[- 모든 라벨링 영역 이미지 위에 그리기 -]*/
+                    setCanvas();
+                }, 0);
+            },
+            cropend: function (e) {
+                /*[- console.log("-- cropper cropend :: ", e.type, e.detail.action); -]*/
+            },
+            crop: function (e) {
+                /*[- console.log("-- cropper crop :: ", e.type); -]*/
+            },
+            zoom: function (e) {
+                /*[- console.log("-- cropper zoom :: ", e.type, e.detail.ratio); -]*/
+                /*[- 선택된 라벨링 crop 영역 셋팅 -]*/
+                setTimeout(function() {
+                    let boxIdx = Number($("#listLabelingImage").find("div.el-labeling.select-labeling").data("box-idx"));
+                    $image.cropper("setData", arrCropValue["box"+boxIdx][arrCropValue["box"+boxIdx].length-1]);
+
+                    /*[- 모든 라벨링 영역 이미지 위에 그리기 -]*/
+                    setCanvas();
+                }, 0);
+            }
+        }).cropper(options);
+
+        /*[- cropper.js Methods -]*/
+        $('.docs-buttons').off("click").on('click', '[data-method]', function () {
+            let $this = $(this);
+            let data = $this.data();
+            let cropper = $image.data('cropper');
+            let cropped;
+            let $target;
+            let result;
+
+            if ($this.prop('disabled') || $this.hasClass('disabled')) {
+                return;
+            }
+
+            if (cropper && data.method) {
+                data = $.extend({}, data);
+
+                if (typeof data.target !== 'undefined') {
+                    $target = $(data.target);
+
+                    if (typeof data.option === 'undefined') {
+                        try {
+                            data.option = JSON.parse($target.val());
+                        } catch (e) {
+                            console.log(e.message);
+                        }
+                    }
+                }
+
+                cropped = cropper.cropped;
+
+                result = $image.cropper(data.method, data.option, data.secondOption);
+
+                switch (data.method) {
+                    case 'rotate':
+                        if (cropped && options.viewMode > 0) {
+                            $image.cropper('crop');
+                        }
+
+                        break;
+
+                    case 'scaleX':
+                    case 'scaleY':
+                        $(this).data('option', -data.option);
+                        break;
+
+                    case 'destroy':
+                        if (uploadedImageURL) {
+                            URL.revokeObjectURL(uploadedImageURL);
+                            uploadedImageURL = '';
+                            $image.attr('src', originalImageURL);
+                        }
+
+                        break;
+                }
+
+                if ($.isPlainObject(result) && $target) {
+                    try {
+                        $target.val(JSON.stringify(result));
+                    } catch (e) {
+                        console.log(e.message);
+                    }
+                }
+            }
+        });
+
+        /*[- Keyboard keydown -]*/
+        $("#modal_labeling").off("keydown").on('keydown', function (e) {
+            if (e.target !== this || !$image.data('cropper') || this.scrollTop > 300) {
+                return;
+            }
+
+            if (e.which === 90 && e.ctrlKey) {
+                console.error("----->> Ctrl+z");
+                return;
+            }
+
+            /*[- 클래스 추가(w) -]*/
+            if(e.which === 87) {
+                $("#btnAddListLabeling").click();
+                return;
+            }
+
+            /*[- 라벨링 박스 수정(s) -]*/
+            if(e.which === 83) {
+                $("#btnChangeLabeling").click();
+                return;
+            }
+
+            /*[- 라벨링 박스(클래스) 복사(d) -]*/
+            if(e.which === 68) {
+                copyLabelingClass();
+                return;
+            }
+
+            /*[- move-edit mode 전환(q) -]*/
+            if(e.which === 81) {
+                changeMode();
+                return;
+            }
+
+            /*[- 라벨링 박스(클래스) 삭제(f) -]*/
+            if(e.which === 70) {
+                deleteLabelingClass();
+                return;
+            }
+
+            /*[- 이미지 사이즈 100%로 변경(r) -]*/
+            if(e.which === 82) {
+                $("#btnImageSizeReset").click();
+                return;
+            }
+
+            switch (e.which) {
+                case 37:
+                    e.preventDefault();
+                    $image.cropper('move', -1, 0);
+                    break;
+
+                case 38:
+                    e.preventDefault();
+                    $image.cropper('move', 0, -1);
+                    break;
+
+                case 39:
+                    e.preventDefault();
+                    $image.cropper('move', 1, 0);
+                    break;
+
+                case 40:
+                    e.preventDefault();
+                    $image.cropper('move', 0, 1);
+                    break;
+            }
+        });
+    }
+
+    /*[- 라벨링 리스트 -]*/
+    function setLabelingList() {
+        $("#listLabelingImage").empty();
+
+        if(orgCropValue.length > 0) {
+            for(let i=0; i<orgCropValue.length; i++) {
+                /*[- 라벨링 리스트의 preview 이미지 만들기 위해 cropper setData crop 영역 지정 -]*/
+                $image.cropper("setData", {x:orgCropValue[i].x, y:orgCropValue[i].y, width:orgCropValue[i].width, height:orgCropValue[i].height, rotate:0, scaleX:1, scaleY:1});
+
+                /*[- crop 영역 canvas 태그 정보 가져오기 -]*/
+                let result = $image.cropper("getCroppedCanvas");
+
+                /*[- 라벨링 리스트 기본 폼 -]*/
+                let tmpHtml = "<div class='col-md-12 row-list' style='padding-left:0.25rem; padding-right:0.25rem; margin:0.3rem 0;' id='list_label_row_"+i+"' data-idx='"+i+"'>";
+                tmpHtml += "    <div class='alert alert-secondary d-flex align-items-center p-0 mb-2 el-labeling' data-box-idx='"+i+"'>";
+                tmpHtml += "        <div class='p-2'><div id='labelingNo_"+i+"' style='width:1.5rem; height:1.5rem; line-height:1.5rem; background-color:"+getLabelingColor(orgCropValue[i].class_id, "c")+"; color:#fff; border-radius:0.75rem; text-align:center;'>"+(i+1)+"</div></div>";
+                tmpHtml += "        <div class='bg-faded canvas-labeling d-inline-block cursor-pointer' style='height:70px; width:70px;' id='label_canvas_"+i+"' onclick='clickLabelingList(\""+i+"\");'>";
+                tmpHtml += "        </div>";
+                tmpHtml += "        <div class='flex-1'>";
+                // tmpHtml += "            <div class='pl-3 class-labeling' data-class-id='"+orgCropValue[i].class_id+"'>"+getLabelingColor(orgCropValue[i].class_id, "n")+"</div>";
+                tmpHtml += "            <div class='p-2 class-labeling' data-class-id='"+orgCropValue[i].class_id+"'>";
+                tmpHtml += "                <select class='form-control' id='selClass_"+i+"' onchange='changeLabelingListClass(\""+i+"\");'>";
+                tmpHtml += $("#selClass").html();
+                tmpHtml += "                </select>";
+                tmpHtml += "            </div>";
+                tmpHtml += "        </div>";
+                tmpHtml += "        <div>";
+                tmpHtml += "            <button type='button' class='btn text-warning' title='reset' style='padding:0.5rem;' onclick='initLabelingData("+i+");'>";
+                tmpHtml += "                초기화";
+                tmpHtml += "            </button>";
+                tmpHtml += "            <button type='button' class='btn text-danger btn-label-del' title='delete' id='btn_label_del_"+i+"' style='padding:0.5rem 1.0rem 0.5rem 0.5rem;' onclick='clickDelLabeling("+i+");'>";
+                tmpHtml += "                삭제";
+                tmpHtml += "            </button>";
+                tmpHtml += "        </div>";
+                tmpHtml += "    </div>";
+                tmpHtml += "</div>";
+
+                $("#listLabelingImage").append(tmpHtml);
+
+                /*[- class 선택 -]*/
+                $("#selClass_"+i).val(orgCropValue[i].class_id);
+
+                /*[- 리스트 preview canvas 영역에 crop 영역 canvas 추가 -]*/
+                $("#listLabelingImage").find("#label_canvas_"+i).append(result);
+            }
+
+            /*[- 라벨링 리스트 canvas 가운데 정렬 css 추가 -]*/
+            $("#listLabelingImage").find("canvas").css({width:"100%", height:"100%", display:"block", "object-fit":"contain"});
+
+            /*[- 첫번째 라벨링 데이터 선택 crop 영역 셋팅 -]*/
+            // $image.cropper("setData", {x:orgCropValue[0].x, y:orgCropValue[0].y, width:orgCropValue[0].width, height:orgCropValue[0].height, rotate:0, scaleX:1, scaleY:1});
+
+            /*[- 첫번째 라벨링 선택 -]*/
+            // $("#listLabelingImage").find("div.el-labeling").eq(0).removeClass("alert-secondary").addClass("border-warning select-labeling");
+
+            /*[- 선택 모드 default -]*/
+            // $(".cropper-crop-box").hide();
+
+            /*[- 첫번째 라벨링 데이터 선택 -]*/
+            clickLabelingList("0");
+        }
+    }
+
+    /*[- 라벨링 리스트에서 라벨링 class 변경 -]*/
+    function changeLabelingListClass(idx) {
+        let cIdx = Number(idx);
+
+        let chgClass = $("#selClass_"+cIdx).val();
+        let cngClassColor = $("#selClass_"+cIdx+" option:selected").data("color");
+
+        /*[- 해당 라벨링 class 변경 저장 -]*/
+        $("#list_label_row_"+cIdx).find("div.class-labeling").data("class-id", Number(chgClass));
+
+        /*[- 라벨링 리스트 라벨링 번호 색 변경 -]*/
+        $("#labelingNo_"+cIdx).css("background-color", cngClassColor);
+
+        /*[- 라벨링 리스트 재선택(사이즈 초기화 및 canvas 다시 그리기 위함) -]*/
+        let boxIdx = Number($("#listLabelingImage").find("div.el-labeling.select-labeling").data("box-idx"));
+        clickLabelingList(boxIdx);
+    }
+
+    /*[- 라벨링 리스트에서 클릭 -]*/
+    function clickLabelingList(idx) {
+        let cIdx = Number(idx);
+
+        /*[- contextmenu hide -]*/
+        $(".contextmenu").hide();
+
+        /*[- 편집모드가 아닐경우 편집모드로 변경 -]*/
+        if($("input[name='radioEdit']:checked").val() === "0") {
+            $("#btnEdit").click();
+        }
+
+        /*[- 이미지 사이즈 reset -]*/
+        // $image.cropper("reset");
+
+        /*[- canvas 다시 그리기 -]*/
+        setCanvas();
+
+        /*if($("input[name='radioEdit']:checked").val() === "0") {
+            /!*[- 선택 모드 일때  -]*!/
+            $(".cropper-crop-box").hide();
+            $("#labelings_canvas").css("pointer-events", "auto");
+        } else {
+            /!*[- 편집 모드 -]*!/
+            if(!$('.cropper-crop-box').is(':visible')) {
+                $(".cropper-crop-box").show();
+                $("#labelings_canvas").css("pointer-events", "none");
+            }
+        }*/
+
+        $("#listLabelingImage").find("div.el-labeling").removeClass("border-warning select-labeling").addClass("alert-secondary");
+        $("#list_label_row_"+cIdx).find("div.el-labeling").removeClass("alert-secondary").addClass("border-warning select-labeling");
+
+        let arrLabelingValue = arrCropValue["box"+cIdx];
+
+        if(arrLabelingValue) {
+            /*[- 선택한 라벨링 crop 영역 셋팅 -]*/
+            $image.cropper("setData", arrLabelingValue[arrLabelingValue.length - 1]);
+
+            /*[- 라벨링 리스트 canvas 변경 -]*/
+            let result = $image.cropper("getCroppedCanvas");
+            $("#list_label_row_"+cIdx).find("canvas").remove();
+            $("#list_label_row_"+cIdx).find("div.canvas-labeling").append(result);
+            $("#list_label_row_"+cIdx).find("canvas").css({width:"100%", height:"100%", display:"block", "object-fit":"contain"});
+        } else {
+            /*[- 라벨링 canvas 제거 -]*/
+            $("#labelings_canvas").remove();
+        }
+    }
+
+    /*[- 라벨링 리스트 삭제 -]*/
+    function clickDelLabeling(idx) {
+        let labelingKey = "box"+idx;
+
+        /*[- 라벨링 array에서 삭제 -]*/
+        delete arrCropValue[labelingKey];
+
+        /*[- 라벨링 리스트에서 선택된 라벨링 index, row number -]*/
+        let selIdx = Number($("#listLabelingImage").find("div.el-labeling.select-labeling").data("box-idx"));
+        let selNum = $("#listLabelingImage").find("div.el-labeling.select-labeling").find(".btn-label-del").closest("div.row-list").prevAll().length;
+
+        /*[- 클릭한 삭제 버튼의 row number -]*/
+        let rowNum = $("#btn_label_del_"+idx).closest("div.row-list").prevAll().length;
+
+        /*[- 라벨링 리스트에서 삭제 -]*/
+        $("#list_label_row_"+idx).remove();
+
+        if($("#listLabelingImage").find("div.el-labeling").length > 0) {
+            let nextIdx = 0;
+            /*[- 삭제 후 라벨링 리스트에서 선택될 라벨링 index -]*/
+            if(selIdx === idx) {
+                /*[- 삭제하려는 것과 리스트에서 선택된 것이 같을 경우 -]*/
+                if(selNum > 0) {
+                    nextIdx = rowNum - 1;
+                }
+            } else {
+                /*[- 삭제하려는 것과 리스트에서 선택된 것이 다를 경우 -]*/
+                if(selNum > 0) {
+                    nextIdx = rowNum;
+                }
+            }
+
+            /*[- 선택된 라벨링이 아닐 경우 리스트에서 위/아래 라벨링 선택 -]*/
+            let nextBoxIdx = Number($("#listLabelingImage").find("div.el-labeling").eq(nextIdx).data("box-idx"));
+            clickLabelingList(nextBoxIdx);
+        }
+
+        /*[- 라벨링 캔버스 다시 그리기 -]*/
+        setCanvas();
+    }
+
+    /*[- 모든 라벨링 영역 이미지 위에 그리기 -]*/
+    function setCanvas() {
+        /*[- 라벨링 canvas 제거 -]*/
+        $("#labelings_canvas").remove();
+
+        let dataCanvas = $image.cropper("getCanvasData");
+        let dataContainer = $image.cropper("getContainerData");
+
+        /*[- 라벨링 canvas를 올리기 위한 기존 cropper 수정 -]*/
+        $(".cropper-drag-box").css("background-color", "rgba(0,0,0,0)");
+        $(".cropper-drag-box").css("overflow", "hidden");
+        $(".cropper-drag-box").css("opacity", "0.8");
+        $(".cropper-drag-box").find("canvas").css("pointer-events", "none");
+        $(".cropper-view-box").find("img").css("opacity", "0");
+
+        /*[- 라벨링 canvas가 올라갈 영역 cropper의 drag 영역에 추가(마우스 이벤트 제거 default) -]*/
+        $(".cropper-drag-box").append("<div id='labelings_canvas' style='width:"+dataCanvas.width+"px; height:"+dataCanvas.height+"px; max-width:"+dataContainer.width+"px; max-height:"+dataContainer.height+"px; position:relative; top:"+dataCanvas.top+"px; left:"+dataCanvas.left+"px; pointer-events:none;'></div>");
+
+        let selBox = "";
+        if($("input[name='radioEdit']:checked").val() === "0") {
+            /*[- 선택 모드(마우스 이벤트 활성화) -]*/
+            $("#labelings_canvas").css("pointer-events", "auto");
+
+        } else {
+            /*[- 편집 모드(마우스 이벤트 제거) -]*/
+            $("#labelings_canvas").css("pointer-events", "none");
+
+            /*[- 라벨링 리시트에서 선택된 영역 데이터 key 저장 -]*/
+            let boxIdx = Number($("#listLabelingImage").find("div.el-labeling.select-labeling").data("box-idx"));
+            selBox = "box"+boxIdx;
+        }
+
+        /*[- 라벨링 영역 그리기 -]*/
+        $.each(arrCropValue, function(key, item) {
+            let label_item = item[item.length-1];
+            let keyNo = Number(key.split("box").join(""));
+            // let classId = Number(orgCropValue[keyNo].class_id);
+            let classId = Number($("#selClass_"+keyNo).val());
+
+            /*[- 원본 이미지와 화면 이미지 사이즈 비율 구하기 -]*/
+            let sizePer = dataCanvas.width / dataCanvas.naturalWidth * 100;
+            /*[- 사이즈 비율에 맞게 위치, 길이 계산 -]*/
+            let cPosTop = label_item.y  * sizePer / 100;
+            let cPosLeft = label_item.x  * sizePer / 100;
+            let cWidth = Math.round(label_item.width  * sizePer / 100);
+            let cHeight = Math.round(label_item.height * sizePer / 100);
+
+            /*[- 라벨링 canvas 영역에 canvas 추가 -]*/
+            $("#labelings_canvas").append("<canvas id='label_canvas_layer_"+key+"' style='position:absolute; top:"+cPosTop+"px; left:"+cPosLeft+"px;'></canvas>");
+
+            /*[- text canvas 위치 계산 -]*/
+            let cPosNoTop = cPosTop;
+            if(cPosNoTop <= 25) {
+                cPosNoTop = cPosTop + cHeight;
+            } else {
+                cPosNoTop = cPosNoTop - 25;
+            }
+            let cPosNoLeft = cPosLeft;
+            if(dataCanvas.width <= (cPosLeft + cWidth + 3)) {
+                cPosNoLeft = dataCanvas.width - 25;
+            }
+            /*[- 라벨링 canvas 영역에 text canvas 추가 -]*/
+            $("#labelings_canvas").append("<canvas id='label_canvas_layer_no_"+key+"' style='position:absolute; top:"+cPosNoTop+"px; left:"+cPosNoLeft+"px;'></canvas>");
+
+            let canvas = $('#label_canvas_layer_'+key)[0];
+            let canvasNo = $("#label_canvas_layer_no_"+key)[0];
+            if (canvas.getContext) {
+                let sqNum = keyNo + 1;
+                /*[- canvas 라벨링 영역 그리기 -]*/
+                let ctx = canvas.getContext('2d');
+                let ctxNo = canvasNo.getContext('2d');
+                canvas.width = cWidth;
+                canvas.height = cHeight;
+                canvas.onclick = function() { clickLabelCanvas(key); };
+                /*if(selBox === key) {
+                    ctx.fillStyle = "rgba(255, 194, 65, 1)";
+                    ctx.fillRect(0, 0, cWidth, cHeight);
+                }*/
+                ctx.strokeStyle = getLabelingColor(classId, "c");
+                ctx.lineWidth = 5;
+                ctx.strokeRect(0, 0, cWidth, cHeight);
+                ctx.fill();
+                let textWidth = ctx.measureText(sqNum+"").width + 20;
+                ctxNo.fillStyle = getLabelingColor(classId, "c");
+                ctxNo.fillRect(0, 0, textWidth, 25);
+                ctxNo.font = "15px Arial";
+                ctxNo.fillStyle = "white";
+                ctxNo.fillText(sqNum+"", 9, 18);
+            }
+        });
+
+        /*[- 라벨링 canvas 그린 후 modal에 focus 강제로 주기(keydown 이벤트를 위함) -]*/
+        $("#modal_labeling").focus();
+    }
+
+    /*[- 라벨링 canvas 영역의 canvas 클릭 -]*/
+    function clickLabelCanvas(idx) {
+        /*let selCanvas = $("#label_canvas_layer_"+idx)[0];
+
+        let selCtx = selCanvas.getContext('2d');
+        selCtx.fillStyle = "rgba(255, 194, 65, 1)";
+        selCtx.fillRect(0, 0, selCtx.canvas.width, selCtx.canvas.height);
+        selCtx.fill();*/
+
+        let boxIdx = Number(idx.split("box").join(""));
+
+        let pos = $("#list_label_row_"+boxIdx).outerHeight() * boxIdx;
+        /*[- 추가된 라벨링 리스트로 스크롤 이동 -]*/
+        $("#container_labeling_list").scrollTop(pos);
+
+        /*[- 편집 모드로 변경 -]*/
+        $("#btnEdit").click();
+
+        /*[- 선택한 라벨링 canvas 영역 라벨링 리스트에서 찾아 클릭 -]*/
+        clickLabelingList(boxIdx);
+    }
+
+    /*[- 라벨링 canvas 클릭 시(선택된 곳이 라벨링 위치일 경우 해당 라벨링 선택) -]*/
+    function clickDragBox(e) {
+        let dataCanvas = $image.cropper("getCanvasData");
+
+        /*[- 원본 이미지와 화면 이미지 사이즈 비율 구하기 -]*/
+        let sizePer = dataCanvas.width / dataCanvas.naturalWidth * 100;
+
+        let cLabelingBoxKey = "";
+
+        /*[- cropper 영역 위의 이미지 안에서의 클릭 좌표 계산 = (cropper-drag-box 클릭 좌표) - ((라벨링 캔버스 묶음의 시작 좌표) - (cropper 영역 시작 좌표)) -]*/
+        let offsetX = e.offsetX - ($("#labelings_canvas").offset().left - $("#wrap_cropper").offset().left);
+        let offsetY = e.offsetY - ($("#labelings_canvas").offset().top - $("#wrap_cropper").offset().top);
+
+        $.each(arrCropValue, function(key, item) {
+            let labelingPosition = item[item.length - 1];
+
+            /*[- 사이즈 비율에 맞게 위치, 길이 계산 -]*/
+            let cPosLeft = labelingPosition.x * sizePer / 100;
+            let cPosTop = labelingPosition.y * sizePer / 100;
+            let cWidth = Math.round(labelingPosition.width * sizePer / 100);
+            let cHeight = Math.round(labelingPosition.height * sizePer / 100);
+
+            /*[- 클릭한 위치의 labeling canvas 가져오기 -]*/
+            if((offsetX >= cPosLeft && offsetX <= (cPosLeft + cWidth)) && (offsetY >= cPosTop && offsetY <= (cPosTop + cHeight))) {
+                cLabelingBoxKey = key;
+            }
+        });
+
+        /*[- 제일 위에 있는 canvas 라벨링 선택 -]*/
+        if(cLabelingBoxKey !== "") {
+            clickLabelCanvas(cLabelingBoxKey);
+        }
+    }
+
+    /*[- class selectbox에서 labeling color, name 가져오기(type - c:color, n:name) -]*/
+    function getLabelingColor(classCode, type) {
+        let returnValue = "";
+        if(type === "c") {
+            returnValue = "#000";
+        }
+
+        $("#selClass option").each(function(i, e) {
+           if(Number($(e).val()) === Number(classCode)) {
+               if(type === "c") {
+                   returnValue = $(e).data("color");
+               } else {
+                   returnValue = $(e).text();
+               }
+           }
+        });
+
+        return returnValue;
+    }
+
+    /*[- 라벨링 박스(클래스) 복사 -]*/
+    function copyLabelingClass() {
+        let copyEl = $("#listLabelingImage").find("div.el-labeling.select-labeling");
+
+        /*[- 라벨링 리스트에서 선택된 데이터가 없을 경우 return -]*/
+        if(copyEl.length == 0) {
+            /*[- 라벨링 영역 메세지 출력 -]*/
+            showLabelingMessage("복사 할 라벨링이 없습니다.");
+
+            return;
+        }
+
+        let boxIdx = Number(copyEl.data("box-idx"));
+
+        /*[- copy 대상 cropper 데이터 가져오기(default position x:20, y:20) -]*/
+        let copyData = $image.cropper("getData");
+        copyData.x = 20;
+        copyData.y = 20;
+
+        let labelClass = $("#selClass_"+boxIdx).val();
+        let labelClassColor = $("#selClass_"+boxIdx+" option:selected").data("color");
+        let labelCnt = orgCropValue.length;
+        let boxKey = "box"+labelCnt;
+
+        /*[- 라벨링 리스트의 preview 이미지 만들기 위해 cropper 영역 crop모드 변경 및 reset -]*/
+        $image.cropper("crop");
+        $image.cropper("reset");
+        $image.cropper("setData", copyData);
+
+        setCanvas();
+
+        /*[- cropper copy box 영역 데이터 추가 -]*/
+        orgCropValue.push({x:copyData.x, y:copyData.y, width:copyData.width, height:copyData.height, class_id:labelClass});
+
+        let jsonArr = new Array();
+        let jsonData = copyData;
+        jsonArr.push(jsonData);
+        arrCropValue[boxKey] = jsonArr;
+
+        /*[- 선택된 라벨링 선택 해제 -]*/
+        $("#listLabelingImage").find("div.el-labeling").removeClass("border-warning select-labeling").addClass("alert-secondary");
+
+        /*[- crop 영역 canvas 태그 정보 가져오기 -]*/
+        let result = $image.cropper("getCroppedCanvas");
+
+        /*[- 라벨링 리스트 기본 폼 -]*/
+        let tmpHtml = "<div class='col-md-12 row-list' style='padding-left:0.25rem; padding-right:0.25rem; margin:0.3rem 0;' id='list_label_row_"+labelCnt+"' data-idx='"+labelCnt+"'>";
+        tmpHtml += "    <div class='alert border-warning select-labeling d-flex align-items-center p-0 mb-2 el-labeling' data-box-idx='"+labelCnt+"'>";
+        tmpHtml += "        <div class='p-2'><div id='labelingNo_"+labelCnt+"' style='width:1.5rem; height:1.5rem; line-height:1.5rem; background-color:"+labelClassColor+"; color:#fff; border-radius:0.75rem; text-align:center;'>"+(labelCnt+1)+"</div></div>";
+        tmpHtml += "        <div class='bg-faded canvas-labeling d-inline-block cursor-pointer' style='height:70px; width:70px;' id='label_canvas_"+labelCnt+"' onclick='clickLabelingList(\""+labelCnt+"\");'>";
+        tmpHtml += "        </div>";
+        tmpHtml += "        <div class='flex-1'>";
+        // tmpHtml += "            <div class='pl-3 class-labeling' data-class-id='"+labelClass+"'>"+labelClassNm+"</div>";
+        tmpHtml += "            <div class='p-2 class-labeling' data-class-id='"+labelClass+"'>";
+        tmpHtml += "                <select class='form-control' id='selClass_"+labelCnt+"' onchange='changeLabelingListClass(\""+labelCnt+"\");'>";
+        tmpHtml += $("#selClass").html();
+        tmpHtml += "                </select>";
+        tmpHtml += "            </div>";
+        tmpHtml += "        </div>";
+        tmpHtml += "        <div>";
+        tmpHtml += "            <button type='button' class='btn text-danger btn-label-del' title='reset' id='btn_label_del_"+labelCnt+"' style='padding:0.5rem 1.0rem 0.5rem 0.5rem;' onclick='clickDelLabeling("+labelCnt+")'>";
+        tmpHtml += "                삭제";
+        tmpHtml += "            </button>";
+        tmpHtml += "        </div>";
+        tmpHtml += "    </div>";
+        tmpHtml += "</div>";
+
+        $("#listLabelingImage").append(tmpHtml);
+
+        /*[- class 선택 -]*/
+        $("#selClass_"+labelCnt).val(labelClass);
+
+        /*[- 추가된 라벨링 리스트로 스크롤 이동 -]*/
+        $("#container_labeling_list").scrollTop($("#listLabelingImage").height());
+
+        /*[- 리스트 preview canvas 영역에 crop 영역 canvas 추가 -]*/
+        $("#listLabelingImage").find("#label_canvas_"+labelCnt).append(result);
+
+        /*[- 추가 라벨링 canvas 가운데 정렬 css 추가 -]*/
+        $("#label_canvas_"+labelCnt).find("canvas").css({width:"100%", height:"100%", display:"block", "object-fit":"contain"});
+
+        /*[- 라벨링 편집 모드 변경 -]*/
+        if($("input[name='radioEdit']:checked").val() === "0") {
+            $("#btnEdit").click();
+        }
+    }
+
+    /*[- move-edit mode 전환 -]*/
+    function changeMode() {
+        let dragMode = $image[0].cropper.options.dragMode;
+        let msgMode = "";
+
+        if(dragMode === "crop") {
+            /*[- crop > move -]*/
+            $image.cropper("setDragMode", "move");
+
+            msgMode = "Move";
+        } else {
+            /*[- move > crop -]*/
+            $image.cropper("setDragMode", "crop");
+
+            msgMode = "Edit";
+        }
+
+        msgMode += " mode";
+
+        /*[- 라벨링 영역 메세지 출력 -]*/
+        showLabelingMessage(msgMode);
+    }
+
+    /*[- 라벨링 박스(클래스) 삭제 -]*/
+    function deleteLabelingClass() {
+        let boxIdx = Number($("#listLabelingImage").find("div.el-labeling.select-labeling").data("box-idx"));
+
+        /*[- 라벨링 리스트에서 선택된 데이터가 없을 경우 return -]*/
+        if (isNaN(boxIdx)) {
+            /*[- 라벨링 영역 메세지 출력 -]*/
+            showLabelingMessage("삭제 할 라벨링이 없습니다.");
+
+            return;
+        }
+
+        /*[- 라벨링 리스트 삭제 -]*/
+        clickDelLabeling(boxIdx);
+
+        let msg = (boxIdx+1)+"번 라벨링 삭제";
+
+        /*[- 라벨링 영역 메세지 출력 -]*/
+        showLabelingMessage(msg);
+    }
+
+    /*[- 라벨링 영역 메세지 출력 -]*/
+    function showLabelingMessage(msg) {
+        $("#labelingToast").addClass("show");
+        $("#labelingToastMsg").text(msg);
+
+        setTimeout(function() {
+            $("#labelingToast").removeClass("show");
+        }, 700);
+    }
+</script>
+
+</html>
