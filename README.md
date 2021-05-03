@@ -4,5 +4,8 @@
 * 사용 기술 : HTML5(canvas), CSS,Thymeleaf, javascript, jQuery, Bootstrap, Cropper.js, MongoDB
 * 주요 기능 : Labeling Box 추가, 수정, 삭제, 복사, 단축키
 
+* 화면
+![auto_labeling_ui](https://user-images.githubusercontent.com/83272386/116846071-7b27bf00-ac22-11eb-9a4c-a343b34f6ac3.png)
+
 ### 비고
 * 단축키 수정 필요
